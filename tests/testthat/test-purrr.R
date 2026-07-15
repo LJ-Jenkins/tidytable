@@ -74,4 +74,102 @@ test_that("pmap works", {
   expect_equal(names(res), c("a", "b"))
 })
 
+test_that("map2_* vector variants have vctrs type safety", {
+  expect_error(map2_lgl(1:3, 1:3, ~ .x + .y))
+  expect_error(map2_int(1:3, 1.5:3.5, ~ .x + .y))
+  # double is richer type
+  expect_no_error(map2_dbl(1L, 1L, ~ .x + .y))
+  expect_error(map2_dbl(1, "1", ~ paste0(.x, .y)))
+  expect_error(map2_chr(Sys.time(), 45, ~ .x + .y))
 
+  expect_error(map2_vec(1:3, 1:3, ~ .x + .y, .ptype = logical()))
+  expect_error(map2_vec(1:3, 1.5:3.5, ~ .x + .y, .ptype = integer()))
+  # double is richer type
+  expect_no_error(map2_vec(1L, 1L, ~ .x + .y, .ptype = double()))
+  expect_error(map2_vec(1, "1", ~ paste0(.x, .y), .ptype = double()))
+  expect_error(map2_vec(Sys.time(), 45, ~ .x + .y, .ptype = double()))
+
+  # no .ptype casts to common richer type
+  .vec <- map2_vec(
+    c(TRUE, FALSE, FALSE), list(1L, 2L, 3.5), ~ if (.x) {
+      .x
+    } else {
+      .y
+    }
+  )
+  expect_equal(.vec, c(1.0, 2.0, 3.5))
+})
+
+test_that("pmap_* vector variants have vctrs type safety", {
+  expect_error(pmap_lgl(list(1:3, 1:3), ~ .x + .y))
+  expect_error(pmap_int(list(1:3, 1.5:3.5), ~ .x + .y))
+  # double is richer type
+  expect_no_error(pmap_dbl(list(1L, 1L), ~ .x + .y))
+  expect_error(pmap_dbl(list(1, "1"), ~ paste0(.x, .y)))
+  expect_error(pmap_chr(list(Sys.time(), 45), ~ .x + .y))
+
+  expect_error(pmap_vec(list(1:3, 1:3), ~ .x + .y, .ptype = logical()))
+  expect_error(pmap_vec(list(1:3, 1.5:3.5), ~ .x + .y, .ptype = integer()))
+  # double is richer type
+  expect_no_error(pmap_vec(list(1L, 1L), ~ .x + .y, .ptype = double()))
+  expect_error(pmap_vec(list(1, "1"), ~ paste0(.x, .y), .ptype = double()))
+  expect_error(pmap_vec(list(Sys.time(), 45), ~ .x + .y, .ptype = double()))
+
+  # no .ptype casts to common richer type
+  .vec <- pmap_vec(
+    list(c(TRUE, FALSE, FALSE), list(1L, 2L, 3.5)), ~ if (.x) {
+      .x
+    } else {
+      .y
+    }
+  )
+  expect_equal(.vec, c(1.0, 2.0, 3.5))
+})
+
+test_that("map2_* vector variants error when result not length 1", {
+  # length 0
+  expect_error(map2_lgl(1:3, 1:3, ~ logical()))
+  expect_error(map2_int(1:3, 1:3, ~ integer()))
+  expect_error(map2_dbl(1:3, 1:3, ~ double()))
+  expect_error(map2_chr(1:3, 1:3, ~ character()))
+  expect_error(map2_vec(1:3, 1:3, ~ integer()))
+
+  # length > 1
+  expect_error(map2_lgl(1:3, 1:3, ~ c(TRUE, FALSE)))
+  expect_error(map2_int(1:3, 1:3, ~ c(1L, 2L)))
+  expect_error(map2_dbl(1:3, 1:3, ~ c(1, 2)))
+  expect_error(map2_chr(1:3, 1:3, ~ c("a", "b")))
+  expect_error(map2_vec(1:3, 1:3, ~ c(1L, 2L)))
+
+  # NULL
+  expect_error(map2_lgl(1:3, 1:3, ~ NULL))
+  expect_error(map2_int(1:3, 1:3, ~ NULL))
+  expect_error(map2_dbl(1:3, 1:3, ~ NULL))
+  expect_error(map2_chr(1:3, 1:3, ~ NULL))
+  expect_error(map2_vec(1:3, 1:3, ~ NULL))
+})
+
+test_that("pmap_* vector variants error when result not length 1", {
+  .l <- list(x = 1:3, y = 1:3)
+
+  # length 0
+  expect_error(pmap_lgl(.l, ~ logical()))
+  expect_error(pmap_int(.l, ~ integer()))
+  expect_error(pmap_dbl(.l, ~ double()))
+  expect_error(pmap_chr(.l, ~ character()))
+  expect_error(pmap_vec(.l, ~ integer()))
+
+  # length > 1
+  expect_error(pmap_lgl(.l, ~ c(TRUE, FALSE)))
+  expect_error(pmap_int(.l, ~ c(1L, 2L)))
+  expect_error(pmap_dbl(.l, ~ c(1, 2)))
+  expect_error(pmap_chr(.l, ~ c("a", "b")))
+  expect_error(pmap_vec(.l, ~ c(1L, 2L)))
+
+  # NULL
+  expect_error(pmap_lgl(.l, ~ NULL))
+  expect_error(pmap_int(.l, ~ NULL))
+  expect_error(pmap_dbl(.l, ~ NULL))
+  expect_error(pmap_chr(.l, ~ NULL))
+  expect_error(pmap_vec(.l, ~ NULL))
+})

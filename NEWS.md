@@ -9,6 +9,7 @@
 
 #### Breaking changes
 * `unnest(.drop = FALSE)` is now the default to match `tidyr` behavior, #836
+* `map2_*()` and `pmap_*()` vector variants now use `purrr`/`vctrs` type and size rules rather than base R coercion, #843
 
 # tidytable 0.11.2
 

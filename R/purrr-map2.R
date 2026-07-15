@@ -13,25 +13,25 @@ map2 <- function(.x, .y, .f, ...) {
 #' @export
 #' @rdname map
 map2_lgl <- function(.x, .y, .f, ...) {
-  as.logical(map2(.x, .y, .f, ...))
+  list_simplify(map2(.x, .y, .f, ...), logical())
 }
 
 #' @export
 #' @rdname map
 map2_int <- function(.x, .y, .f, ...) {
-  as.integer(map2(.x, .y, .f, ...))
+  list_simplify(map2(.x, .y, .f, ...), integer())
 }
 
 #' @export
 #' @rdname map
 map2_dbl <- function(.x, .y, .f, ...) {
-  as.double(map2(.x, .y, .f, ...))
+  list_simplify(map2(.x, .y, .f, ...), double())
 }
 
 #' @export
 #' @rdname map
 map2_chr <- function(.x, .y, .f, ...) {
-  as.character(map2(.x, .y, .f, ...))
+  list_simplify(map2(.x, .y, .f, ...), character())
 }
 
 #' @export
@@ -55,6 +55,5 @@ map2_df <- map2_dfr
 #' @export
 #' @rdname map
 map2_vec <- function(.x, .y, .f, ..., .ptype = NULL) {
-  out <- map2(.x, .y, .f, ...)
-  list_simplify(out, .ptype)
+  list_simplify(map2(.x, .y, .f, ...), .ptype)
 }

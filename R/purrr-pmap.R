@@ -21,25 +21,25 @@ pmap <- function(.l, .f, ...) {
 #' @export
 #' @rdname map
 pmap_lgl <- function(.l, .f, ...) {
-  as.logical(pmap(.l, .f, ...))
+  list_simplify(pmap(.l, .f, ...), logical())
 }
 
 #' @export
 #' @rdname map
 pmap_int <- function(.l, .f, ...) {
-  as.integer(pmap(.l, .f, ...))
+  list_simplify(pmap(.l, .f, ...), integer())
 }
 
 #' @export
 #' @rdname map
 pmap_dbl <- function(.l, .f, ...) {
-  as.double(pmap(.l, .f, ...))
+  list_simplify(pmap(.l, .f, ...), double())
 }
 
 #' @export
 #' @rdname map
 pmap_chr <- function(.l, .f, ...) {
-  as.character(pmap(.l, .f, ...))
+  list_simplify(pmap(.l, .f, ...), character())
 }
 
 #' @export
@@ -63,16 +63,10 @@ pmap_df <- pmap_dfr
 #' @export
 #' @rdname map
 pmap_vec <- function(.l, .f, ..., .ptype = NULL) {
-  out <- pmap(.l, .f, ...)
-  list_simplify(out, .ptype)
+  list_simplify(pmap(.l, .f, ...), .ptype)
 }
 
 .args_recycle <- function(args) {
   args <- as.list(args)
-  sizes <- list_sizes(args)
-  n <- max(sizes)
-
-  args <- map(args, vec_recycle, n)
-
-  args
+  vec_recycle_common(!!!args, .arg = ".l", .call = caller_env())
 }
