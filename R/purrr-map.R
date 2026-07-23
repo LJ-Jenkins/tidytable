@@ -90,7 +90,8 @@ map_vec <- function(.x, .f, ..., .ptype = NULL) {
 
 # Simplify a list of values to a vector of their common type
 # Ensures every element has size 1
-list_simplify <- function(x, ptype = NULL) {
-  list_check_all_size(x, 1)
-  list_unchop(x, ptype = ptype)
+list_simplify <- function(x, ptype = NULL, call = caller_env()) {
+  list_check_all_vectors(x, call = call)
+  list_check_all_size(x, 1L, call = call)
+  vec_c(!!!x, .ptype = ptype, .error_call = call)
 }
