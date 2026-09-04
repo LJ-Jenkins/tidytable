@@ -5,6 +5,11 @@ test_that("can filter the data.table", {
     filter(x <= 4)
 
   expect_equal(df$x, 1:4)
+
+  df <- df %>%
+    filter_out(x <= 2)
+
+  expect_equal(df$x, 3:4)
 })
 
 test_that("can filter a data.frame", {
@@ -14,37 +19,61 @@ test_that("can filter a data.frame", {
     filter(x <= 4)
 
   expect_equal(df$x, 1:4)
+
+  df <- df %>%
+    filter_out(x <= 2)
+
+  expect_equal(df$x, 3:4)
 })
 
 test_that("can filter multiple conditions with commas", {
   df <- data.table(x = 1:10, y = 1:10)
 
-  df <- df %>%
+  df1 <- df %>%
     filter(x <= 4, y < 3)
 
-  expect_equal(df$x, 1:2)
-  expect_equal(df$y, 1:2)
+  expect_equal(df1$x, 1:2)
+  expect_equal(df1$y, 1:2)
+
+  df2 <- df %>%
+    filter_out(x <= 2, y < 3)
+
+  expect_equal(df2$x, 3:10)
+  expect_equal(df2$y, 3:10)
 })
 
 test_that("can filter with |", {
   df <- data.table(x = 1:10, y = 1:10)
 
-  df <- df %>%
+  df1 <- df %>%
     filter(x <= 4 | y < 3)
 
-  expect_equal(df$x, 1:4)
-  expect_equal(df$y, 1:4)
+  expect_equal(df1$x, 1:4)
+  expect_equal(df1$y, 1:4)
+
+  df2 <- df %>%
+    filter_out(x <= 4 | y < 3)
+
+  expect_equal(df2$x, 5:10)
+  expect_equal(df2$y, 5:10)
 })
 
 test_that("filter works with '.by'", {
   df <- data.table(x = c(1, 1, 2, 2), y = c("a", "a", "a", "b"))
 
-  df <- df %>%
+  df1 <- df %>%
     filter(x == mean(x), .by = y)
 
-  expect_named(df, c("x", "y"))
-  expect_equal(df$x, 2)
-  expect_equal(df$y, "b")
+  expect_named(df1, c("x", "y"))
+  expect_equal(df1$x, 2)
+  expect_equal(df1$y, "b")
+
+  df2 <- df %>%
+    filter_out(x == mean(x), .by = y)
+
+  expect_named(df2, c("x", "y"))
+  expect_equal(df2$x, c(1, 1, 2))
+  expect_equal(df2$y, c("a", "a", "a"))
 })
 
 test_that("filter works with '.by' & multiple conditions & .N", {
@@ -56,6 +85,13 @@ test_that("filter works with '.by' & multiple conditions & .N", {
   expect_named(result_df, c("x", "y"))
   expect_equal(result_df$x, c(1))
   expect_equal(result_df$y, c("a"))
+
+  result_df <- df %>%
+    filter_out(x <= mean(x), x < .N, .by = y)
+
+  expect_named(result_df, c("x", "y"))
+  expect_equal(result_df$x, c(2, 3))
+  expect_equal(result_df$y, c("a", "b"))
 })
 
 test_that("recognizes other args in custom functions & works with quosures", {
@@ -74,6 +110,19 @@ test_that("recognizes other args in custom functions & works with quosures", {
 
   expect_equal(result_df$x, c(1))
   expect_equal(result_df$y, c("a"))
+
+  filter_out_val <- function(.df, filter_col, val) {
+    filter_col <- enquo(filter_col)
+
+    .df %>%
+      filter_out(!!filter_col == val)
+  }
+
+  result_df <- test_df %>%
+    filter_out_val(x, 1)
+
+  expect_equal(result_df$x, c(2, 3))
+  expect_equal(result_df$y, c("a", "b"))
 })
 
 test_that("works with map2() in nested data.tables", {
@@ -94,6 +143,18 @@ test_that("works with map2() in nested data.tables", {
   expect_equal(result_list2[[1]]$x, c(1))
   expect_equal(result_list2[[2]]$x, c(2))
   expect_equal(result_list2[[3]]$x, c(3))
+
+  result_list1 <- map2(test_list, filter_list, ~ filter_out(.x, x == .y))
+
+  expect_equal(result_list1[[1]]$x, c(2, 3))
+  expect_equal(result_list1[[2]]$x, c(1, 3, 4, 5))
+  expect_equal(result_list1[[3]]$x, c(1, 2, 4, 5, 6, 7, 8, 9, 10))
+
+  result_list2 <- map2(test_list, filter_list, ~ .x %>% filter_out(x == !!.y))
+
+  expect_equal(result_list2[[1]]$x, c(2, 3))
+  expect_equal(result_list2[[2]]$x, c(1, 3, 4, 5))
+  expect_equal(result_list2[[3]]$x, c(1, 2, 4, 5, 6, 7, 8, 9, 10))
 })
 
 test_that("properly passes quosure environment", {
@@ -109,12 +170,23 @@ test_that("properly passes quosure environment", {
 
   expect_equal(result_list[[1]], tidytable(x = 1))
   expect_equal(result_list[[2]], tidytable(x = 1:2))
+
+  dt_filter_out <- function(dt, conditions) {
+    conditions <- enquo(conditions)
+    filter_out(dt, !!conditions)
+  }
+
+  result_list <- lapply(val_list, function(val) dt_filter_out(test_df, x < val))
+
+  expect_equal(result_list[[1]], tidytable(x = c(2, 3)))
+  expect_equal(result_list[[2]], tidytable(x = 3))
 })
 
 test_that("errors on named inputs", {
   df <- data.table(x = 1:5)
 
   expect_error(filter(.df, x = 4))
+  expect_error(filter_out(.df, x = x == 4))
 })
 
 test_that("can use .data and .env", {
@@ -122,10 +194,15 @@ test_that("can use .data and .env", {
 
   x <- 3
 
-  df <- df %>%
+  df1 <- df %>%
     filter(.data[["x"]] == .env$x)
 
-  expect_equal(df$x, 3)
+  expect_equal(df1$x, 3)
+
+  df2 <- df %>%
+    filter_out(.data[["x"]] == .env$x)
+
+  expect_equal(df2$x, c(1, 2, 4, 5))
 })
 
 test_that("can use .data and .env with .by", {
@@ -133,10 +210,15 @@ test_that("can use .data and .env with .by", {
 
   x <- 3
 
-  df <- df %>%
+  df1 <- df %>%
     filter(.data[["x"]] == .env$x, .by = y)
 
-  expect_equal(df$x, 3)
+  expect_equal(df1$x, 3)
+
+  df2 <- df %>%
+    filter_out(.data[["x"]] == .env$x, .by = y)
+
+  expect_equal(df2$x, c(1, 2, 4, 5, 6))
 })
 
 test_that("works on a grouped_tt", {
@@ -151,6 +233,16 @@ test_that("works on a grouped_tt", {
   expect_equal(res$y, "b")
   expect_equal(group_vars(res), "y")
   expect_true(is_grouped_df(res))
+
+  res2 <- df %>%
+    group_by(y) %>%
+    filter_out(x == mean(x))
+
+  expect_named(res2, c("x", "y"))
+  expect_equal(res2$x, c(1, 1, 2))
+  expect_equal(res2$y, c("a", "a", "a"))
+  expect_equal(group_vars(res2), "y")
+  expect_true(is_grouped_df(res2))
 })
 
 test_that("properly handles NA comparisons when `.by` is used, #812", {
@@ -162,4 +254,11 @@ test_that("properly handles NA comparisons when `.by` is used, #812", {
   expect_named(res, c("x", "y"))
   expect_equal(res$x, 1)
   expect_equal(res$y, "a")
+
+  res2 <- df %>%
+    filter_out(x == 1, .by = y)
+
+  expect_named(res2, c("x", "y"))
+  expect_equal(res2$x, NA_real_)
+  expect_equal(res2$y, "b")
 })

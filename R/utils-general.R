@@ -31,12 +31,15 @@ call2_i <- function(.df, i = NULL, .by = NULL) {
 
 # Uses fast `by` trick for i position using .I
 # See: https://stackoverflow.com/a/16574176/13254470
-call2_i_by <- function(.df, i, .by) {
+call2_i_by <- function(.df, i, .by, out = FALSE) {
   j <- expr(.I[!!i])
   dt_expr <- call2_j(.df, j, .by)
   dt_expr <- call2("$", dt_expr, expr(V1))
   # Properly handle NA equality, #812
   dt_expr <- call2("na.omit", dt_expr)
+  if (out) {
+    dt_expr <- call2("-", dt_expr)
+  }
   dt_expr <- call2_i(.df, dt_expr)
   dt_expr
 }
