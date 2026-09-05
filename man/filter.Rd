@@ -17,7 +17,8 @@ filter_out(.df, ..., .by = NULL)
 \item{.by}{Columns to group by if filtering with a summary function}
 }
 \description{
-Filters a dataset to choose rows where conditions are true.
+Filters a dataset to choose rows to keep or drop where
+conditions are true.
 }
 \examples{
 df <- tidytable(
@@ -30,5 +31,11 @@ df \%>\%
   filter(a >= 2, b >= 4)
 
 df \%>\%
+  filter_out(a >= 2, b >= 4)
+
+df \%>\%
   filter(b <= mean(b), .by = c)
+
+df \%>\%
+  filter_out(b <= mean(b), .by = c)
 }

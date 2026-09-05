@@ -1,7 +1,8 @@
 #' Filter rows on one or more conditions
 #'
 #' @description
-#' Filters a dataset to choose rows where conditions are true.
+#' Filters a dataset to choose rows to keep or drop where
+#' conditions are true.
 #'
 #' @param .df A data.frame or data.table
 #' @param ... Conditions to filter by
@@ -20,7 +21,13 @@
 #'   filter(a >= 2, b >= 4)
 #'
 #' df %>%
+#'   filter_out(a >= 2, b >= 4)
+#'
+#' df %>%
 #'   filter(b <= mean(b), .by = c)
+#'
+#' df %>%
+#'   filter_out(b <= mean(b), .by = c)
 filter <- function(.df, ..., .by = NULL) {
   UseMethod("filter")
 }
@@ -30,7 +37,9 @@ filter.tidytable <- function(.df, ..., .by = NULL) {
   .by <- enquo(.by)
 
   dots <- enquos(...)
-  if (length(dots) == 0) return(.df)
+  if (length(dots) == 0) {
+    return(.df)
+  }
 
   check_filter(dots)
 
@@ -72,7 +81,9 @@ filter_out.tidytable <- function(.df, ..., .by = NULL) {
   .by <- enquo(.by)
 
   dots <- enquos(...)
-  if (length(dots) == 0) return(.df)
+  if (length(dots) == 0) {
+    return(.df)
+  }
 
   check_filter(dots)
 
@@ -88,7 +99,7 @@ filter_out.tidytable <- function(.df, ..., .by = NULL) {
     i <- call2("!", i)
     dt_expr <- call2_i(.df, i)
   } else {
-    dt_expr <- call2_i_by(.df, i, .by, out = TRUE)
+    dt_expr <- call2_i_by(.df, i, .by, invert_i = TRUE)
   }
 
   eval_tidy(dt_expr, .df, dt_env)
