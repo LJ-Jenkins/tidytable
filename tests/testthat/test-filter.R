@@ -26,6 +26,58 @@ test_that("can filter a data.frame", {
   expect_equal(df$x, 3:4)
 })
 
+test_that("filter leaves only TRUE (no NA)", {
+  df <- data.frame(x = c(1, NA, Inf))
+
+  df <- df %>%
+    filter(x == 1)
+
+  expect_equal(df$x, 1)
+})
+
+test_that("filter_out leaves only non-TRUE (including NA)", {
+  df <- data.frame(x = c(1, NA, Inf))
+
+  df <- df %>%
+    filter_out(x == 1)
+
+  expect_equal(df$x, c(NA, Inf))
+})
+
+test_that("leaves input unchanged when no conditions are provided", {
+  df <- data.frame(x = 1:10)
+
+  df1 <- df %>%
+    filter()
+
+  expect_equal(df1$x, 1:10)
+
+  # dplyr currently returns empty df - not sure if intended
+  # will open PR to confirm
+  df2 <- df %>%
+    filter_out()
+
+  expect_equal(df2$x, 1:10)
+})
+
+test_that("filter returns empty when condition has no TRUE values", {
+  df <- data.frame(x = 1:10)
+
+  df1 <- df %>%
+    filter(x > 10)
+
+  expect_equal(df1$x, integer(0))
+})
+
+test_that("filter_out returns all rows when condition has no TRUE values", {
+  df <- data.frame(x = 1:10)
+
+  df2 <- df %>%
+    filter_out(x > 10)
+
+  expect_equal(df2$x, 1:10)
+})
+
 test_that("can filter multiple conditions with commas", {
   df <- data.table(x = 1:10, y = 1:10)
 
@@ -95,7 +147,6 @@ test_that("filter works with '.by' & multiple conditions & .N", {
 })
 
 test_that("recognizes other args in custom functions & works with quosures", {
-
   filter_val <- function(.df, filter_col, val) {
     filter_col <- enquo(filter_col)
 
@@ -126,11 +177,13 @@ test_that("recognizes other args in custom functions & works with quosures", {
 })
 
 test_that("works with map2() in nested data.tables", {
-  filter_list <- list(1,2,3)
+  filter_list <- list(1, 2, 3)
   test_df <- data.table(x = 1:3)
-  test_list <- list(data.table(x = 1:3),
-                    data.table(x = 1:5),
-                    data.table(x = 1:10))
+  test_list <- list(
+    data.table(x = 1:3),
+    data.table(x = 1:5),
+    data.table(x = 1:10)
+  )
 
   result_list1 <- map2(test_list, filter_list, ~ filter(.x, x == .y))
 
