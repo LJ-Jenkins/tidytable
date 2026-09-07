@@ -95,14 +95,17 @@ filter_out.tidytable <- function(.df, ..., .by = NULL) {
 
   .by <- tidyselect_names(.df, !!.by)
 
-  if (length(.by) == 0) {
-    i <- call2("!", i)
-    dt_expr <- call2_i(.df, i)
-  } else {
-    dt_expr <- call2_i_by(.df, i, .by, invert_i = TRUE)
-  }
+  indices_expr <- call2_i_inv_ind(.df, i, .by)
 
-  eval_tidy(dt_expr, .df, dt_env)
+  indices <- eval_tidy(indices_expr, .df, dt_env)
+
+  if (length(indices)) {
+    # same as call2_i without enquo or another length check
+    eval_tidy(call2("[", .df, indices), .df, dt_env)
+  } else {
+    # if no indices, return the whole df (nothing filtered out)
+    .df
+  }
 }
 
 #' @export
