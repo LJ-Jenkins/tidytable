@@ -81,8 +81,8 @@ filter_out.tidytable <- function(.df, ..., .by = NULL) {
   .by <- enquo(.by)
 
   dots <- enquos(...)
-  if (length(dots) == 0) {
-    return(.df)
+  if (length(dots) == 0L) {
+    return(.df[0L, ])
   }
 
   check_filter(dots)

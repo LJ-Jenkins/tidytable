@@ -44,20 +44,22 @@ test_that("filter_out leaves only non-TRUE (including NA)", {
   expect_equal(df$x, c(NA, Inf))
 })
 
-test_that("leaves input unchanged when no conditions are provided", {
+test_that("filter leaves input unchanged when no conditions are provided", {
   df <- data.frame(x = 1:10)
 
-  df1 <- df %>%
+  df <- df %>%
     filter()
 
-  expect_equal(df1$x, 1:10)
+  expect_equal(df$x, 1:10)
+})
 
-  # dplyr currently returns empty df - not sure if intended
-  # will open PR to confirm
-  df2 <- df %>%
+test_that("filter_out returns 0 row dt when no conditions are provided", {
+  df <- data.frame(x = 1:10)
+
+  df <- df %>%
     filter_out()
 
-  expect_equal(df2$x, 1:10)
+  expect_equal(df$x, integer(0))
 })
 
 test_that("filter returns empty when condition has no TRUE values", {
